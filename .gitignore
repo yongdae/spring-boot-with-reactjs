@@ -48,6 +48,7 @@ out/
 
 # production
 /frontend/build
+/src/main/resources/static/*
 
 # misc
 .DS_Store
