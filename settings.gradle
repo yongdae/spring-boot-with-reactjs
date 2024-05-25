@@ -1,1 +1,4 @@
-rootProject.name = 'demo'
+rootProject.name = 'spring-boot-with-reactjs-demo'
+
+include 'server'
+include 'app'

@@ -1,28 +1,38 @@
+import org.springframework.boot.gradle.tasks.bundling.BootJar
+
 plugins {
-    id 'org.springframework.boot' version '2.5.4'
-    id 'io.spring.dependency-management' version '1.0.11.RELEASE'
     id 'java'
+    id 'org.springframework.boot' version '3.3.0'
+    id 'io.spring.dependency-management' version '1.1.5'
 }
 
 group = 'com.example'
 version = '0.0.1-SNAPSHOT'
-sourceCompatibility = '1.8'
+
+java {
+    sourceCompatibility = '17'
+}
 
 repositories {
     mavenCentral()
 }
 
 dependencies {
-    implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
     implementation 'org.springframework.boot:spring-boot-starter-web'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
-test {
+tasks.named('test') {
     useJUnitPlatform()
 }
 
-def frontendDir = "$projectDir/frontend"
+tasks.named('bootJar', BootJar) {
+    dependsOn "copyReactBuildFiles"
+
+    mainClass = "com.example.server.DemoApplication"
+    archiveBaseName = "demo"
+}
 
 sourceSets {
     main {
@@ -32,9 +42,11 @@ sourceSets {
     }
 }
 
-task installReact(type: Exec) {
-    workingDir "$frontendDir"
-    inputs.dir "$frontendDir"
+def appDir = "$rootDir/app"
+
+tasks.register('installReact', Exec) {
+    workingDir "$appDir"
+    inputs.dir "$appDir"
     group = BasePlugin.BUILD_GROUP
     if (System.getProperty('os.name').toLowerCase(Locale.ROOT).contains('windows')) {
         commandLine "npm.cmd", "audit", "fix"
@@ -45,10 +57,10 @@ task installReact(type: Exec) {
     }
 }
 
-task buildReact(type: Exec) {
+tasks.register('buildReact', Exec) {
     dependsOn "installReact"
-    workingDir "$frontendDir"
-    inputs.dir "$frontendDir"
+    workingDir "$appDir"
+    inputs.dir "$appDir"
     group = BasePlugin.BUILD_GROUP
     if (System.getProperty('os.name').toLowerCase(Locale.ROOT).contains('windows')) {
         commandLine "npm.cmd", "run-script", "build"
@@ -57,12 +69,8 @@ task buildReact(type: Exec) {
     }
 }
 
-task copyReactBuildFiles(type: Copy) {
+tasks.register('copyReactBuildFiles', Copy) {
     dependsOn "buildReact"
-    from "$frontendDir/build"
+    from "$appDir/build"
     into "$buildDir/resources/main/static"
-}
-
-tasks.bootJar {
-    dependsOn "copyReactBuildFiles"
 }
